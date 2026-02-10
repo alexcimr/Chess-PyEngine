@@ -1,30 +1,48 @@
 from model.enums import PieceType, Color
-from model.board import Board
+from model.utils import is_on_board
 
 class Pawn():
     def __init__(self, color: Color):
         self.type = PieceType.PAWN
         self.color = color
+        self.enpassant_available = False
 
-    def moves(self, board: Board, x: int, y: int) -> list[tuple[int, int]]:
+    def moves(self, board, row: int, col: int) -> list[tuple[int, int]]:
         """
-        Zwraca pseudo-ruchy, czyli wszystkie mozliwe nie
-        zważając czy krol jest w szachu dla danej figury
-        :param board:
-        :param x: oś pozioma [0,7]
-        :param y: oś pionowa [0,7]
-        :return:
+        Zwraca listę pseudo-legalnych ruchówen.
+        Uwzględnia zasady poruszania się figury i przeszkody,
+        ale NIE sprawdza, czy ruch pozostawia króla pod szachem.
+        Ruch specjalny: en passant (bicie w przelocie)
         """
         Moves = []
-        if self.color == Color.WHITE:
-            # taka fuknjce moze dodac sprawdzqja empty ze czy pole psute?
-            # czy lepiej Board[x][y] == "#"? ze puste
-            if y + 1 <= 7 and Board.empty(y, x):
-                Moves.append((y + 1, x))
-            if y == 1 and Board.empty(y + 1, x) and board.isEmpty(y + 2, x):
-                Moves.append((x, y + 2))
+        move_value = self.color.value # -1 (czarne) or 1 (białe)
+        opp_color = Color.BLACK if self.color == Color.WHITE else Color.WHITE
 
-            # tutaj cos ta wiesz chcialbym sprawdzic czy danan komorka to jest
-            # czarny kolor ale jak bedzie pusta o slabo bo nie moge board[][].color = Color.Black bo moze byc puste
-            if x + 1 <= 7 and y + 1 <= 7 and not board.empty(y + 1, x + 1) and Board[y + 1][x + 1].color == Color.BLACK:
+        # Pchanie
+        if board.is_empty(row + move_value, col):
+            Moves.append((row + move_value, col))
+
+            if self.color == Color.WHITE and row == 1 and board.is_empty(row + 2, col):
+                Moves.append((row + 2, col))
+
+            if self.color == Color.BLACK and row == 6 and board.is_empty(row - 2, col):
+                Moves.append((row - 2, col))
+
+        # Bicie
+        if is_on_board(row + move_value, col + 1):
+            tile = board.get_piece_color(row + move_value, col + 1)
+            if tile == opp_color:
+                Moves.append((row + move_value, col + 1))
+            # Enpassant
+            elif tile == None and board.get_piece_type(row, col + 1) == PieceType.PAWN and board.grid[row][col + 1].enpassant_available:
+                Moves.append((row + move_value, col + 1))
+        # Bicie
+        if is_on_board(row + move_value, col - 1):
+            tile = board.get_piece_color(row + move_value, col - 1)
+            if tile == opp_color:
+                Moves.append((row + move_value, col - 1))
+            # Enpassant
+            elif tile == None and board.get_piece_type(row, col - 1) == PieceType.PAWN and board.grid[row][col - 1].enpassant_available:
+                Moves.append((row + move_value, col - 1))
+
         return Moves
