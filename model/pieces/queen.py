@@ -4,6 +4,7 @@ class Queen():
     def __init__(self, color: Color):
         self.type = PieceType.QUEEN
         self.color = color
+        self.moved = False
 
     def moves(self, board, row: int, col: int) -> list[tuple[int, int]]:
         """

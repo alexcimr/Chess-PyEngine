@@ -13,7 +13,10 @@ class PieceType(Enum):
     PAWN = "P"
 
 class MoveType(Enum):
-    ORDINARY = 1
+    NORMAL = 1
     CASTLING = 2
-    ENPASSANT = 3
-    PROMOTION = 4
+    EN_PASSANT = 3
+    PROMOTION_QUEEN = 4
+    PROMOTION_ROOK = 5
+    PROMOTION_BISHOP = 6
+    PROMOTION_KNIGHT = 7

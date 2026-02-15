@@ -1,7 +1,11 @@
+from enum import Enum
+class PieceType(Enum):
+    KING = "K"
+    QUEEN = "Q"
+    ROOK = "R"
+    BISHOP = "B"
+    KNIGHT = "N"
+    PAWN = "P"
 
-directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-
-for dr, dc in directions:
-    for i in range(4):
-        dr += 1
-    print(dr)
+for x in PieceType:
+    print(x)

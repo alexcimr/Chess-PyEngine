@@ -5,6 +5,7 @@ class Pawn():
     def __init__(self, color: Color):
         self.type = PieceType.PAWN
         self.color = color
+        self.moved = False
         self.enpassant_available = False
 
     def moves(self, board, row: int, col: int) -> list[tuple[int, int]]:
