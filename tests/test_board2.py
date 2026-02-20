@@ -1,6 +1,6 @@
 import unittest
 from model.board import Board
-from model.enums import Color, MoveType, PieceType
+from model.enums import Color, MoveType, PieceType, GameStatus
 from model.pieces import Pawn, King, Rook, Queen, Bishop, Knight
 
 
@@ -56,7 +56,7 @@ class TestBoardComprehensive(unittest.TestCase):
         self.board.grid[1][0] = pawn
 
         self.board.make_move((1, 0), (3, 0), MoveType.NORMAL)
-        self.assertTrue(pawn.enpassant_available)
+        self.assertEqual(self.board.enpassant_tile, (2, 0))
 
     def test_05_en_passant_execution(self):
         white_pawn = Pawn(Color.WHITE)
@@ -64,7 +64,7 @@ class TestBoardComprehensive(unittest.TestCase):
 
         self.board.grid[3][0] = white_pawn
         self.board.grid[3][1] = black_pawn
-        white_pawn.enpassant_available = True
+        self.board.enpassant_tile = (2, 0)
 
         start, end = (3, 1), (2, 0)
         cap, moved, ep = self.board.make_move(start, end, MoveType.EN_PASSANT)
@@ -78,7 +78,7 @@ class TestBoardComprehensive(unittest.TestCase):
         black_pawn = Pawn(Color.BLACK)
         self.board.grid[3][0] = white_pawn
         self.board.grid[3][1] = black_pawn
-        white_pawn.enpassant_available = True
+        self.board.enpassant_tile = (2, 0)
 
         start, end = (3, 1), (2, 0)
         cap, moved, ep = self.board.make_move(start, end, MoveType.EN_PASSANT)
@@ -184,9 +184,10 @@ class TestBoardComprehensive(unittest.TestCase):
         self.board.grid[0][7] = enemy_rook
 
         moves = self.board.get_legal_moves(0, 2)
+        positions = [pos for pos, _ in moves]
 
         expected_moves = [(0, 1), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7)]
-        self.assertEqual(sorted(moves), sorted(expected_moves))
+        self.assertEqual(sorted(positions), sorted(expected_moves))
 
     def test_14_absolute_pin_diagonal(self):
         king = King(Color.WHITE)
@@ -198,10 +199,11 @@ class TestBoardComprehensive(unittest.TestCase):
         self.board.grid[3][3] = enemy_queen
 
         moves = self.board.get_legal_moves(1, 1)
+        positions = [pos for pos, _ in moves]
 
-        self.assertIn((2, 2), moves)
-        self.assertIn((3, 3), moves)
-        self.assertNotIn((0, 2), moves)
+        self.assertIn((2, 2), positions)
+        self.assertIn((3, 3), positions)
+        self.assertNotIn((0, 2), positions)
 
     def test_15_king_cannot_move_into_check(self):
         king = King(Color.WHITE)
@@ -210,10 +212,11 @@ class TestBoardComprehensive(unittest.TestCase):
         self.board.grid[2][1] = enemy_rook
 
         moves = self.board.get_legal_moves(0, 0)
+        positions = [pos for pos, _ in moves]
 
-        self.assertNotIn((0, 1), moves)
-        self.assertNotIn((1, 1), moves)
-        self.assertIn((1, 0), moves)
+        self.assertNotIn((0, 1), positions)
+        self.assertNotIn((1, 1), positions)
+        self.assertIn((1, 0), positions)
 
     def test_16_must_capture_or_block_check(self):
         king = King(Color.WHITE)
@@ -226,9 +229,10 @@ class TestBoardComprehensive(unittest.TestCase):
         self.board.grid[7][5] = rook
 
         moves = self.board.get_legal_moves(7, 5)
+        positions = [pos for pos, _ in moves]
 
-        self.assertIn((7, 0), moves)
-        self.assertNotIn((6, 5), moves)
+        self.assertIn((7, 0), positions)
+        self.assertNotIn((6, 5), positions)
 
     def test_17_pawn_cannot_move_pinned(self):
         king = King(Color.WHITE)
@@ -240,8 +244,9 @@ class TestBoardComprehensive(unittest.TestCase):
         self.board.grid[3][3] = enemy_bishop
 
         moves = self.board.get_legal_moves(1, 1)
+        positions = [pos for pos, _ in moves]
 
-        self.assertEqual(moves, [])
+        self.assertEqual(positions, [])
 
     def test_18_king_moves_out_of_check(self):
         king = King(Color.WHITE)
@@ -251,10 +256,11 @@ class TestBoardComprehensive(unittest.TestCase):
         self.board.grid[0][7] = enemy_rook
 
         moves = self.board.get_legal_moves(0, 0)
+        positions = [pos for pos, _ in moves]
 
-        self.assertNotIn((0, 1), moves)
-        self.assertIn((1, 0), moves)
-        self.assertIn((1, 1), moves)
+        self.assertNotIn((0, 1), positions)
+        self.assertIn((1, 0), positions)
+        self.assertIn((1, 1), positions)
 
     def test_19_cant_castle_through_check(self):
         king = King(Color.WHITE)
@@ -266,7 +272,8 @@ class TestBoardComprehensive(unittest.TestCase):
         self.board.grid[1][1] = enemy_rook
 
         moves = self.board.get_legal_moves(0, 3)
-        self.assertNotIn((0, 1), moves)
+        positions = [pos for pos, _ in moves]
+        self.assertNotIn((0, 1), positions)
 
     def test_20_undo_restores_moved_flag(self):
         king = King(Color.WHITE)
@@ -294,7 +301,7 @@ class TestBoardComprehensive(unittest.TestCase):
         start1, end1 = (1, 3), (3, 3)
         cap1, moved1, ep1 = self.board.make_move(start1, end1, MoveType.NORMAL)
 
-        self.assertTrue(white_pawn.enpassant_available)
+        self.assertEqual(self.board.enpassant_tile, (2, 3))
         self.assertFalse(self.board.is_tile_in_check(0, 4, Color.BLACK))
 
         start2, end2 = (3, 4), (2, 3)
@@ -322,13 +329,90 @@ class TestBoardComprehensive(unittest.TestCase):
         self.assertIsNone(self.board.grid[2][3])
 
         self.assertFalse(self.board.is_tile_in_check(0, 4, Color.BLACK))
-        self.assertTrue(white_pawn.enpassant_available)
+        self.assertEqual(self.board.enpassant_tile, (2, 3))
 
         self.board.undo_move(start1, end1, cap1, moved1, ep1, MoveType.NORMAL)
 
         self.assertEqual(self.board.grid[1][3], white_pawn)
         self.assertIsNone(self.board.grid[3][3])
-        self.assertFalse(white_pawn.enpassant_available)
+        self.assertIsNone(self.board.enpassant_tile)
+
+    def test_22_en_passant_tile_clears_on_non_pawn_move_and_undo_restores(self):
+        white_pawn = Pawn(Color.WHITE)
+        black_knight = Knight(Color.BLACK)
+
+        self.board.grid[1][0] = white_pawn
+        self.board.grid[7][1] = black_knight
+
+        cap1, moved1, ep1 = self.board.make_move((1, 0), (3, 0), MoveType.NORMAL)
+        self.assertEqual(self.board.enpassant_tile, (2, 0))
+
+        cap2, moved2, ep2 = self.board.make_move((7, 1), (5, 2), MoveType.NORMAL)
+        self.assertIsNone(self.board.enpassant_tile)
+
+        self.board.undo_move((7, 1), (5, 2), cap2, moved2, ep2, MoveType.NORMAL)
+        self.assertEqual(self.board.enpassant_tile, (2, 0))
+
+        self.board.undo_move((1, 0), (3, 0), cap1, moved1, ep1, MoveType.NORMAL)
+        self.assertIsNone(self.board.enpassant_tile)
+
+    def test_23_en_passant_tile_not_set_on_single_pawn_move(self):
+        white_pawn = Pawn(Color.WHITE)
+        self.board.grid[1][0] = white_pawn
+
+        self.board.make_move((1, 0), (2, 0), MoveType.NORMAL)
+        self.assertIsNone(self.board.enpassant_tile)
+
+    def test_24_en_passant_expires_after_other_move(self):
+        white_pawn = Pawn(Color.WHITE)
+        black_pawn = Pawn(Color.BLACK)
+        black_rook = Rook(Color.BLACK)
+
+        self.board.grid[1][0] = white_pawn
+        self.board.grid[3][1] = black_pawn
+        self.board.grid[7][7] = black_rook
+
+        self.board.make_move((1, 0), (3, 0), MoveType.NORMAL)
+        self.assertEqual(self.board.enpassant_tile, (2, 0))
+
+        self.board.make_move((7, 7), (7, 6), MoveType.NORMAL)
+        self.assertIsNone(self.board.enpassant_tile)
+
+        moves = black_pawn.moves(self.board, 3, 1)
+        self.assertNotIn((2, 0), moves)
+
+    def test_25_game_status_normal(self):
+        king = King(Color.WHITE)
+        rook = Rook(Color.WHITE)
+
+        self.board.grid[0][0] = king
+        self.board.grid[0][1] = rook
+
+        self.assertEqual(self.board.game_status(Color.WHITE), GameStatus.NORMAL)
+
+    def test_26_game_status_checkmate(self):
+        white_king = King(Color.WHITE)
+        black_king = King(Color.BLACK)
+        black_queen = Queen(Color.BLACK)
+
+        # White king in corner, mated by queen protected by king
+        self.board.grid[0][0] = white_king
+        self.board.grid[1][1] = black_queen
+        self.board.grid[2][2] = black_king
+
+        self.assertEqual(self.board.game_status(Color.WHITE), GameStatus.CHECKMATE)
+
+    def test_27_game_status_stalemate(self):
+        white_king = King(Color.WHITE)
+        black_king = King(Color.BLACK)
+        black_queen = Queen(Color.BLACK)
+
+        # Classic stalemate: white king has no moves, not in check
+        self.board.grid[0][0] = white_king
+        self.board.grid[1][2] = black_queen
+        self.board.grid[2][1] = black_king
+
+        self.assertEqual(self.board.game_status(Color.WHITE), GameStatus.STALEMATE)
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,4 +1,4 @@
-from model.enums import PieceType, Color, MoveType
+from model.enums import PieceType, Color, MoveType, GameStatus
 from model.pieces import Pawn, Rook, Knight, Bishop, Queen, King
 from model.utils import is_on_board
 
@@ -6,9 +6,11 @@ from model.utils import is_on_board
 class Board():
     def __init__(self):
         self.grid = [[None for _ in range(8)] for _ in range(8)]
+        self.enpassant_tile = None # Puste pole ktore można zbić pionkim
 
     def clear_board(self):
         self.grid = [[None for _ in range(8)] for _ in range(8)]
+        self.enpassant_tile = None
 
     def setup_start_position(self):
         """Ustawia figury na pozycjach startowych dla nowej gry."""
@@ -47,7 +49,7 @@ class Board():
     def get_piece_type(self, row, col):
         """Zwraca typ figury lub None, jeśli pole puste."""
         if not is_on_board(row, col):
-            return False
+            return None
 
         piece = self.grid[row][col]
         if piece == None:
@@ -57,7 +59,7 @@ class Board():
     def get_piece_color(self, row, col):
         """Zwraca kolor figury lub None, jeśli pole puste."""
         if not is_on_board(row, col):
-            return False
+            return None
 
         piece = self.grid[row][col]
         if piece == None:
@@ -96,16 +98,13 @@ class Board():
         piece = self.grid[sr][sc]
         captured_piece = self.grid[er][ec]
         old_moved_status = piece.moved
-        old_enpassant_status = False
-
-        # Resetowanie enpassanta
-        if piece.type == PieceType.PAWN:
-            old_enpassant_status = piece.enpassant_available
-            piece.enpassant_available = False
+        old_enpassant_status = self.enpassant_tile
 
         # Ustawiamy enpassant jesli pion skacze o 2 pola
         if piece.type == PieceType.PAWN and abs(sr - er) == 2:
-            piece.enpassant_available = True
+            self.enpassant_tile = ((sr + er) // 2, sc) # Pole za pionkiem
+        else:
+            self.enpassant_tile = None
 
         # Ruch figury
         self.grid[er][ec] = piece
@@ -160,8 +159,7 @@ class Board():
         self.grid[sr][sc] = piece
 
         # Przywracamy flage enpassant
-        if piece.type == PieceType.PAWN:
-            piece.enpassant_available = old_enpassant_status
+        self.enpassant_tile = old_enpassant_status
 
         # Przywracamy figure na pole docelowe
         if move_type == MoveType.NORMAL:
@@ -191,7 +189,7 @@ class Board():
             self.grid[er][ec] = None
 
     def get_legal_moves(self, row, col):
-        """Zwraca listę legalnych ruchów (takich, które nie narażają króla na szach)."""
+        """Zwraca listę legalnych ruchów (takich, które nie narażają króla na szach) i typ ruchu."""
         Legal_moves = []
         piece = self.grid[row][col]
         pseudo_moves = piece.moves(self, row, col)
@@ -204,7 +202,7 @@ class Board():
             MoveType.PROMOTION_BISHOP, MoveType.PROMOTION_KNIGHT
         ]
 
-        # Funkcja pomocnicza: Zrob ruch -> Sprawdz krola -> Cofnij
+        # Funkcja pomocnicza: Zrob ruch -> Sprawdz krola czy nie w szachu -> Cofnij
         def is_safe(start_pos, end_pos, move_type):
             captured_piece, old_moved_status, old_enpassant_status = self.make_move(start_pos, end_pos, move_type)
             king_row, king_col = self.king_finder(piece_color)
@@ -220,26 +218,26 @@ class Board():
                 if end_row == 0 or end_row == 7:
                     for promoted in Promotes:
                         if is_safe(start_pos, end_pos, promoted):
-                            Legal_moves.append(end_pos)
+                            Legal_moves.append((end_pos, promoted))
                 elif self.grid[end_row][end_col] == None and col != end_col:  # czy zrobil en passant?
                     if is_safe(start_pos, end_pos, MoveType.EN_PASSANT):
-                        Legal_moves.append(end_pos)
+                        Legal_moves.append((end_pos, MoveType.EN_PASSANT))
                 else:
                     if is_safe(start_pos, end_pos, MoveType.NORMAL):
-                        Legal_moves.append(end_pos)
+                        Legal_moves.append((end_pos, MoveType.NORMAL))
 
             # Logika dla Krola (roszady)
             elif piece.type == PieceType.KING:
                 if abs(col - end_col) == 2:
                     if is_safe(start_pos, end_pos, MoveType.CASTLING):
-                        Legal_moves.append(end_pos)
+                        Legal_moves.append((end_pos, MoveType.CASTLING))
                 else:
                     if is_safe(start_pos, end_pos, MoveType.NORMAL):
-                        Legal_moves.append(end_pos)
+                        Legal_moves.append((end_pos, MoveType.NORMAL))
             # Logika dla reszty
             else:
                 if is_safe(start_pos, end_pos, MoveType.NORMAL):
-                    Legal_moves.append(end_pos)
+                    Legal_moves.append((end_pos, MoveType.NORMAL))
 
         return Legal_moves
 
@@ -247,6 +245,26 @@ class Board():
         """Znajduje pozycję (row, col) króla danego koloru."""
         for row in range(8):
             for col in range(8):
-                piece = self.grid[row][col]
                 if self.get_piece_type(row, col) == PieceType.KING and self.get_piece_color(row, col) == color:
                     return (row, col)
+
+    def game_status(self, king_color: Color):
+        """Zwraca status gry dla danego koloru: normalnie, mat albo pat."""
+        opp_color = Color.WHITE if king_color == Color.BLACK else Color.BLACK
+
+        for row in range(8):
+            for col in range(8):
+                if self.get_piece_color(row, col) == king_color and self.get_legal_moves(row, col):
+                    return GameStatus.NORMAL
+
+        king_row, king_col = self.king_finder(king_color)
+        if self.is_tile_in_check(king_row, king_col, opp_color):
+            return GameStatus.CHECKMATE
+        return GameStatus.STALEMATE
+
+
+
+
+
+
+

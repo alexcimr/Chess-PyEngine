@@ -43,13 +43,24 @@ class TestPawn(unittest.TestCase):
     def test_en_passant_right(self):
         white_pawn = Pawn(Color.WHITE)
         black_pawn = Pawn(Color.BLACK)
-        black_pawn.enpassant_available = True
 
         self.board.grid[4][3] = white_pawn
         self.board.grid[4][4] = black_pawn
+        self.board.enpassant_tile = (5, 4)
 
         moves = white_pawn.moves(self.board, 4, 3)
         self.assertIn((5, 4), moves, "Powinien być dostępny En Passant na (5, 4)")
+
+    def test_en_passant_not_on_own_pawn(self):
+        white_pawn = Pawn(Color.WHITE)
+        own_pawn = Pawn(Color.WHITE)
+
+        self.board.grid[4][3] = white_pawn
+        self.board.grid[4][4] = own_pawn
+        self.board.enpassant_tile = (5, 4)
+
+        moves = white_pawn.moves(self.board, 4, 3)
+        self.assertNotIn((5, 4), moves, "Nie można bić en passant własnego piona")
 
 
 if __name__ == '__main__':

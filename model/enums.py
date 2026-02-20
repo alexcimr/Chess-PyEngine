@@ -20,3 +20,8 @@ class MoveType(Enum):
     PROMOTION_ROOK = 5
     PROMOTION_BISHOP = 6
     PROMOTION_KNIGHT = 7
+
+class GameStatus(Enum):
+    NORMAL = 1
+    CHECKMATE = 2
+    STALEMATE = 3
