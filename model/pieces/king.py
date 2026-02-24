@@ -1,6 +1,7 @@
 from model.enums import PieceType, Color
 
 class King():
+    point_value = 0
     def __init__(self, color: Color):
         self.type = PieceType.KING
         self.color = color

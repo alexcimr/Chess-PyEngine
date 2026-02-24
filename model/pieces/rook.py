@@ -1,6 +1,7 @@
 from model.enums import PieceType, Color
 
 class Rook():
+    point_value = 5
     def __init__(self, color: Color):
         self.type = PieceType.ROOK
         self.color = color

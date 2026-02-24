@@ -42,9 +42,9 @@ class Game:
             print()
             print(f"Ruch: {color_on_move} ")
             print()
-            while self.status == GameStatus.NORMAL:
-                while not self.make_move(input(...)...):
-                    self.turn = Color.WHITE if self.turn == Color.BLACK else Color.BLACK
+            # while self.status == GameStatus.NORMAL:
+            #     while not self.make_move(input(...)...):
+            #         self.turn = Color.WHITE if self.turn == Color.BLACK else Color.BLACK
 
             print(self.status)
 

@@ -262,9 +262,16 @@ class Board():
             return GameStatus.CHECKMATE
         return GameStatus.STALEMATE
 
+    def all_legal_moves(self, color: Color):
+        Moves = []
+        for row in range(8):
+            for col in range(8):
+                if self.get_piece_color(row, col) == color:
+                    legal_moves = self.get_legal_moves(row, col)
+                    for end_pos, move_type in legal_moves:
+                        Moves.append(((row, col), end_pos, move_type))
 
-
-
+        return Moves
 
 
 
