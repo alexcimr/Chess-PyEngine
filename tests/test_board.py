@@ -1,7 +1,7 @@
 import unittest
 from model.board import Board
 from model.enums import Color
-from model.pieces import King, Rook, Pawn, Knight
+from model.pieces import King, Rook, Pawn, Knight, Bishop
 
 class TestBoardChecks(unittest.TestCase):
 
@@ -50,6 +50,25 @@ class TestBoardChecks(unittest.TestCase):
         self.board.grid[4][5] = King(Color.WHITE)
         is_check = self.board.is_tile_in_check(4, 4, Color.WHITE)
         self.assertTrue(is_check)
+    def test_all_legals(self):
+        self.board.grid[0][1] = King(Color.WHITE)
+        self.board.grid[1][0] = Pawn(Color.WHITE)
+        self.board.grid[1][1] = Pawn(Color.WHITE)
+        self.board.grid[1][2] = Pawn(Color.WHITE)
+        self.board.grid[4][1] = Knight(Color.WHITE)
+        self.board.grid[3][6] = Rook(Color.WHITE)
 
+        self.board.grid[6][0] = Pawn(Color.BLACK)
+        self.board.grid[6][1] = Pawn(Color.BLACK)
+        self.board.grid[6][2] = Pawn(Color.BLACK)
+        self.board.grid[6][3] = Bishop(Color.BLACK)
+        self.board.grid[7][1] = King(Color.BLACK)
+        self.board.grid[7][2] = Rook(Color.BLACK)
+        self.board.update_king_positions()
+
+        print(self.board.all_legal_moves(Color.BLACK))
+
+    def test_M3(self):
+        self.board.grid[4][4] = King(Color.BLACK)
 if __name__ == '__main__':
     unittest.main()

@@ -1,5 +1,6 @@
 from model.board import Board
 from model.enums import PieceType, Color, MoveType, GameStatus, Zorbist
+from model.pst import EVAL_TABLE
 
 
 class Bot():
@@ -16,7 +17,41 @@ class Bot():
                 piece = self.board.grid[row][col]
                 if piece is not None:
                     res += piece.point_value * piece.color.value  # 1 or -1
+                    res += EVAL_TABLE[piece.color][piece.type][row][col]
         return res
+
+    def eval_table_diff(self, start_pos: tuple[int, int], end_pos: tuple[int, int], move_type: MoveType) -> int:
+        sr, sc = start_pos
+        er, ec = end_pos
+        piece = self.board.grid[sr][sc]
+        color = piece.color
+        opp_piece = self.board.grid[er][ec]
+
+        if move_type == MoveType.PROMOTION_QUEEN:
+            diff = EVAL_TABLE[color][PieceType.QUEEN][er][ec] - EVAL_TABLE[color][piece.type][sr][sc]
+        elif move_type == MoveType.PROMOTION_ROOK:
+            diff = EVAL_TABLE[color][PieceType.ROOK][er][ec] - EVAL_TABLE[color][piece.type][sr][sc]
+        elif move_type == MoveType.PROMOTION_BISHOP:
+            diff = EVAL_TABLE[color][PieceType.BISHOP][er][ec] - EVAL_TABLE[color][piece.type][sr][sc]
+        elif move_type == MoveType.PROMOTION_KNIGHT:
+            diff = EVAL_TABLE[color][PieceType.KNIGHT][er][ec] - EVAL_TABLE[color][piece.type][sr][sc]
+        else:
+            diff = EVAL_TABLE[color][piece.type][er][ec] - EVAL_TABLE[color][piece.type][sr][sc]
+
+        if opp_piece is not None:
+            diff -= EVAL_TABLE[opp_piece.color][opp_piece.type][er][ec]
+
+        if move_type == MoveType.CASTLING:
+            if ec == 1:
+                diff += EVAL_TABLE[color][PieceType.ROOK][sr][2] - EVAL_TABLE[color][PieceType.ROOK][sr][0]
+            elif ec == 5:
+                diff += EVAL_TABLE[color][PieceType.ROOK][sr][4] - EVAL_TABLE[color][PieceType.ROOK][sr][7]
+
+        elif move_type == MoveType.EN_PASSANT:
+            captured_pawn = self.board.grid[sr][ec]
+            diff -= EVAL_TABLE[captured_pawn.color][captured_pawn.type][sr][ec]
+
+        return diff
 
     def minimax(self, depth: int, pos_eval: float, maximazing_color: Color, alfa: float, beta: float) -> float:
         if depth == 0:
@@ -60,7 +95,8 @@ class Bot():
         if maximazing_color == Color.WHITE:
             maxEval = -float('inf')
             for move, score in moves:
-                curr_eval = pos_eval + score
+                curr_eval = pos_eval + score + self.eval_table_diff(*move)
+
                 undo_data = self.board.make_move(*move)
 
                 eval = self.minimax(depth - 1, curr_eval, Color.BLACK, alfa, beta)
@@ -86,7 +122,7 @@ class Bot():
         elif maximazing_color == Color.BLACK:
             minEval = float('inf')
             for move, score in moves:
-                curr_eval = pos_eval - score
+                curr_eval = pos_eval - score + self.eval_table_diff(*move)
                 undo_data = self.board.make_move(*move)
 
                 eval = self.minimax(depth - 1, curr_eval, Color.WHITE, alfa, beta)
@@ -128,7 +164,7 @@ class Bot():
         if maximazing_color == Color.WHITE:
             maxEval = -float('inf')
             for move, score in moves:
-                curr_eval = pos_eval + score
+                curr_eval = pos_eval + score + self.eval_table_diff(*move)
                 undo_data = self.board.make_move(*move)
 
                 eval = self.minimax(depth - 1, curr_eval, Color.BLACK, alfa, beta)
@@ -145,7 +181,7 @@ class Bot():
         elif maximazing_color == Color.BLACK:
             minEval = float('inf')
             for move, score in moves:
-                curr_eval = pos_eval - score
+                curr_eval = pos_eval - score + self.eval_table_diff(*move)
                 undo_data = self.board.make_move(*move)
 
                 eval = self.minimax(depth - 1, curr_eval, Color.WHITE, alfa, beta)

@@ -13,7 +13,7 @@ class Knight():
         Uwzględnia zasady poruszania się figury i przeszkody,
         ale NIE sprawdza, czy ruch pozostawia króla pod szachem.
         """
-        Moves = []
+        moves = []
         opp_color = Color.BLACK if self.color == Color.WHITE else Color.WHITE
 
         jumps = [
@@ -27,8 +27,8 @@ class Knight():
             next_col = col + dc
 
             if board.is_empty(next_row, next_col):
-                Moves.append((next_row, next_col))
+                moves.append((next_row, next_col))
             elif board.get_piece_color(next_row, next_col) == opp_color:
-                Moves.append((next_row, next_col))
+                moves.append((next_row, next_col))
 
-        return Moves
+        return moves

@@ -25,3 +25,8 @@ class GameStatus(Enum):
     NORMAL = 1
     CHECKMATE = 2
     STALEMATE = 3
+
+class Zorbist(Enum):
+    EXACT = 1
+    UPPERBOUND = 2
+    LOWERBOUND = 3
