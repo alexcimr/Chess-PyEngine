@@ -37,9 +37,14 @@ class Board():
     def clear_board(self):
         self.grid = [[None for _ in range(8)] for _ in range(8)]
         self.enpassant_tile = None
+        self.white_king_pos = None
+        self.black_king_pos = None
+        self.current_hash = 0
 
     def setup_start_position(self):
         """Ustawia figury na pozycjach startowych dla nowej gry."""
+        self.clear_board()
+
         # --- BIAŁE ---
         self.grid[0][0] = Rook(Color.WHITE)
         self.grid[0][7] = Rook(Color.WHITE)
