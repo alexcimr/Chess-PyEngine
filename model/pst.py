@@ -1,6 +1,6 @@
 from model.enums import PieceType, Color
 
-PST_SCALE = 1/6
+PST_SCALE = 1/16
 # Wartości materialne
 pieces = [
     PieceType.PAWN,
