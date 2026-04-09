@@ -58,15 +58,24 @@ def draw_coordinates(screen, font):
         screen.blit(num_surf, (MARGIN - 30, y))
 
 def draw_menu(screen, font, button_rect, msg, bot_time):
-    """Rysuje panel boczny i przycisk na dole."""
     px = PANEL_X
     pygame.draw.rect(screen, (60, 60, 60), (px, MARGIN, PANEL_WIDTH, BOARD_SIZE), border_radius=10)
-    if msg:
-        s = font.render(msg, True, (255, 100, 100))
-        screen.blit(s, (px + PANEL_WIDTH // 2 - s.get_width() // 2, MARGIN + 50))
+
+    depth_rect = pygame.Rect(px + (PANEL_WIDTH - 200) // 2, MARGIN + 20, 200, 40)
+    pygame.draw.rect(screen, (70, 100, 140), depth_rect, border_radius=20)
+    d = font.render(f"GŁĘBOKOŚĆ: {BOT_DEPTH}", True, COLOR_TEXT)
+    screen.blit(d, (depth_rect.centerx - d.get_width() // 2, depth_rect.centery - d.get_height() // 2))
+
     if bot_time > 0:
         t = font.render(f"BOT MYŚLAŁ: {bot_time:.2f}s", True, (200, 200, 200))
-        screen.blit(t, (px + PANEL_WIDTH // 2 - t.get_width() // 2, MARGIN + 100))
+        screen.blit(t, (px + PANEL_WIDTH // 2 - t.get_width() // 2, MARGIN + 80))
+
+    if msg:
+        msg_rect = pygame.Rect(px + (PANEL_WIDTH - 200) // 2, MARGIN + 120, 200, 40)
+        pygame.draw.rect(screen, (140, 60, 60), msg_rect, border_radius=20)
+        s = font.render(msg, True, COLOR_TEXT)
+        screen.blit(s, (msg_rect.centerx - s.get_width() // 2, msg_rect.centery - s.get_height() // 2))
+
     pygame.draw.rect(screen, (103, 129, 97), button_rect, border_radius=20)
     bt = font.render("NOWA GRA", True, COLOR_TEXT)
     screen.blit(bt, (button_rect.centerx - bt.get_width() // 2, button_rect.centery - bt.get_height() // 2))
@@ -117,6 +126,7 @@ def status_text(status):
     return "GRA TRWA"
 
 def play_game():
+    global BOT_DEPTH
     pygame.init()
     screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     font, font_p = pygame.font.SysFont("Arial", 20, bold=True), pygame.font.SysFont("segoeuisymbol", 70)
@@ -126,9 +136,27 @@ def play_game():
     clock = pygame.time.Clock()
     sel, moves, turn, active, msg, b_time = None, [], Color.WHITE, True, "", 0
 
+    flag32 = True
+    flag20 = True
+    flag6 = True
+    flag3 = True
     while True:
         if active and turn == Color.BLACK:
             st = time.time()
+            mats = board.material_on_board()
+            if mats <= 32 and flag32:
+                BOT_DEPTH += 1
+                flag32 = False
+            if mats <= 20 and flag20:
+                BOT_DEPTH += 1
+                flag20 = False
+            if mats <= 6 and flag6:
+                BOT_DEPTH += 1
+                flag6 = False
+            if mats <= 3 and flag3:
+                BOT_DEPTH += 1
+                flag3 = False
+
             m = bot.best_move(depth=BOT_DEPTH, maximazing_color=Color.BLACK)
             b_time = time.time() - st
             if m:

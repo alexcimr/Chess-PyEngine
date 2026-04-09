@@ -433,8 +433,6 @@ class TestPST(unittest.TestCase):
         bot = Bot(self.board)
         move = bot.best_move(1, Color.WHITE)
 
-        # Uniwersalne: sprawdzamy czy wybrany ruch prowadzi na pole z lepszym PST
-        # zamiast porównywać sztywno koordynaty
         chosen_pst = EVAL_TABLE[Color.WHITE][PieceType.KNIGHT][move[1][0]][move[1][1]]
         other_pst = EVAL_TABLE[Color.WHITE][PieceType.KNIGHT][7][0]
         self.assertTrue(chosen_pst >= other_pst)
@@ -447,7 +445,6 @@ class TestPST(unittest.TestCase):
         bot = Bot(self.board)
         move = bot.best_move(1, Color.WHITE)
 
-        # Uniwersalne: sprawdzamy czy bot nie wybrał pola gorszego niż startowe
         start_pst = EVAL_TABLE[Color.WHITE][PieceType.BISHOP][1][0]
         end_pst = EVAL_TABLE[Color.WHITE][PieceType.BISHOP][move[1][0]][move[1][1]]
         self.assertTrue(end_pst >= start_pst)
@@ -460,7 +457,6 @@ class TestPST(unittest.TestCase):
         bot = Bot(self.board)
         move = bot.best_move(1, Color.WHITE)
 
-        # To musi zostać: król musi zejść z linii d (kolumna 3), aby uniknąć szacha
         self.assertNotEqual(move[1][1], 3)
 
 

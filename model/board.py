@@ -495,3 +495,12 @@ class Board():
                 if piece is not None:
                     res += piece.point_value * piece.color.value
         return res
+
+    def material_on_board(self):
+        res = 0
+        for row in range(8):
+            for col in range(8):
+                piece = self.grid[row][col]
+                if piece is not None:
+                    res += piece.point_value
+        return res
