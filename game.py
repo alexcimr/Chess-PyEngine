@@ -2,7 +2,7 @@ import pygame
 import time
 from model.enums import PieceType, Color, GameStatus
 from model.board import Board
-from model.bot_pst import Bot
+from model.bot import Bot
 
 BOARD_SIZE, SIDE_PANEL, MARGIN = 700, 250, 50
 WINDOW_WIDTH = BOARD_SIZE + SIDE_PANEL + (MARGIN * 2)
@@ -174,7 +174,11 @@ def play_game():
                 if btn.collidepoint(ev.pos):
                     board, bot = new_game()
                     sel, moves, turn, active, msg, b_time = None, [], Color.WHITE, True, "", 0
+
+                    BOT_DEPTH = 5
+                    flag32 = flag20 = flag6 = flag3 = True
                     continue
+
                 if active and turn == Color.WHITE:
                     p = get_board_pos(ev.pos)
                     if p:

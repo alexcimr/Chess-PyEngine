@@ -2,7 +2,7 @@ import unittest
 from model.board import Board
 from model.enums import Color, PieceType, MoveType
 from model.pieces import Pawn, Rook, King, king, Queen, Knight, Bishop
-from model.bot import Bot
+from model.bot_dumb import Bot
 
 class BotTest(unittest.TestCase):
 

@@ -2,7 +2,7 @@ import unittest
 from model.board import Board
 from model.enums import Color, PieceType, MoveType
 from model.pieces import Pawn, Rook, King, Queen, Knight, Bishop
-from model.bot_pst import Bot
+from model.bot import Bot
 from model.pst import EVAL_TABLE
 
 
@@ -249,7 +249,7 @@ import unittest
 from model.board import Board
 from model.enums import Color, PieceType, MoveType
 from model.pieces import Pawn, Rook, King, Queen, Knight, Bishop
-from model.bot_pst import Bot
+from model.bot import Bot
 from model.pst import EVAL_TABLE
 
 
