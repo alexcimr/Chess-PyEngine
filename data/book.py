@@ -1,6 +1,5 @@
 import json
 import chess.pgn
-import os
 from model.board import Board
 from model.enums import MoveType
 
@@ -24,7 +23,7 @@ def uci_to_board_move(board: Board, uci: str):
     if promo_char:
         promos = {'q': MoveType.PROMOTION_QUEEN, 'r': MoveType.PROMOTION_ROOK,
                   'b': MoveType.PROMOTION_BISHOP, 'n': MoveType.PROMOTION_KNIGHT}
-        return start_pos, end_pos, promos.get(promo_char)
+        return start_pos, end_pos, promos[promo_char]
 
     if board.grid[start_row][start_col] is None:
         return None
