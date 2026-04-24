@@ -53,7 +53,7 @@ class Bot():
                 piece = self.board.grid[row][col]
                 if piece is not None:
                     res += piece.point_value * piece.color.value  # +1 White, -1 Black
-                    res += self.current_pst[piece.color][piece.type][row][col]
+                    res += self.current_pst[piece.color][piece.type][row][col] * piece.color.value
         return res
 
     def eval_table_diff(self, start_pos: tuple[int, int], end_pos: tuple[int, int], move_type: MoveType) -> int:
@@ -79,20 +79,22 @@ class Bot():
         else:
             diff = self.current_pst[color][piece.type][er][ec] - self.current_pst[color][piece.type][sr][sc]
 
+        diff *= color.value
+
         # Remove PST contribution of a captured piece
         if opp_piece is not None:
-            diff -= self.current_pst[opp_piece.color][opp_piece.type][er][ec]
+            diff -= self.current_pst[opp_piece.color][opp_piece.type][er][ec] * opp_piece.color.value
 
         if move_type == MoveType.CASTLING:
             if ec == 1:     # King-side
-                diff += self.current_pst[color][PieceType.ROOK][sr][2] - self.current_pst[color][PieceType.ROOK][sr][0]
+                diff += color.value * (self.current_pst[color][PieceType.ROOK][sr][2]- self.current_pst[color][PieceType.ROOK][sr][0])
             elif ec == 5:   # Queen-side
-                diff += self.current_pst[color][PieceType.ROOK][sr][4] - self.current_pst[color][PieceType.ROOK][sr][7]
+                diff += color.value * (self.current_pst[color][PieceType.ROOK][sr][4]- self.current_pst[color][PieceType.ROOK][sr][7])
 
         # En passant: the captured pawn is on a different square than end_pos
         elif move_type == MoveType.EN_PASSANT:
             captured_pawn = self.board.grid[sr][ec]
-            diff -= self.current_pst[captured_pawn.color][captured_pawn.type][sr][ec]
+            diff -= self.current_pst[captured_pawn.color][captured_pawn.type][sr][ec] * captured_pawn.color.value
 
         return diff
 

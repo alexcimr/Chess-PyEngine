@@ -5,9 +5,9 @@ from model.enums import MoveType
 
 # Settings
 PGN_FILE = "lichess_elite_2025-11.pgn"  # https://database.nikonoel.fr/
-MAX_GAMES_TO_READ = 200000
+MAX_GAMES_TO_READ = 500000
 MOVES_PER_GAME = 20
-MIN_MOVES_PLAYED = 4
+MIN_MOVES_PLAYED = 3
 
 def print_book_stats(filtered_book: dict, games_read: int) -> None:
     """Prints a summary of the generated opening book."""
@@ -17,11 +17,10 @@ def print_book_stats(filtered_book: dict, games_read: int) -> None:
         "max moves per game": MOVES_PER_GAME,
         "min times played": MIN_MOVES_PLAYED,
     }
-    print("  book.json created")
-    print("=" * 30)
+    print("book.json created!")
+    print("-" * 30)
     for key, val in stats.items():
-        print(f"  {key:<18} {val}")
-    print("=" * 30 + "\n")
+        print(f"{key:<18} {val}")
 
 def uci_to_board_move(board: Board, uci: str) -> tuple:
     """

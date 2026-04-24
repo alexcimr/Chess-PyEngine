@@ -21,10 +21,10 @@ COLOR_SELECTED = (246, 229, 141)
 COLOR_MOVE     = (90, 90, 90)
 
 # --- UI Colors ---
-COLOR_GREEN    = (103, 129, 97)  # Twój kolor z przycisku NEW GAME
-COLOR_RED      = (180, 120, 120) # Kolor dla tury/wygranej Bota
-COLOR_YELLOW   = (180, 150, 70)  # Kolor dla remisu
-COLOR_BLUE     = (70, 100, 140)  # Kolor dla poziomu DEPTH
+COLOR_GREEN    = (103, 129, 97)
+COLOR_RED      = (180, 120, 120)
+COLOR_YELLOW   = (180, 150, 70)
+COLOR_BLUE     = (70, 100, 140)
 
 BOT_DEPTH = 5
 
@@ -211,14 +211,12 @@ def play_game() -> None:
             m = bot.best_move(depth=BOT_DEPTH, maximazing_color=Color.BLACK)
             b_time = time.time() - st
 
-            if m:
-                board.make_move(*m)
-                status = board.game_status(Color.WHITE)
-                if status != GameStatus.NORMAL:
-                    msg, active = get_endgame_message(status, Color.WHITE), False
-                turn = Color.WHITE
-            else:
-                msg, active = "BOT HAS NO MOVES", False
+
+            board.make_move(*m)
+            status = board.game_status(Color.WHITE)
+            if status != GameStatus.NORMAL:
+                msg, active = get_endgame_message(status, Color.WHITE), False
+            turn = Color.WHITE
 
         # --- Events ---
         for ev in pygame.event.get():

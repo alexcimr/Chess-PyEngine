@@ -6,7 +6,7 @@ from book import uci_to_board_move
 
 # Settings
 PGN_FILE = "lichess_elite_2025-11.pgn"  # https://database.nikonoel.fr/
-MAX_GAMES_TO_READ = 1000
+MAX_GAMES_TO_READ = 100
 # Artificialy low for better piece placement
 OPENING_THRESHOLD = 50
 MIDGAME_THRESHOLD = 12
@@ -56,7 +56,7 @@ def add_position_to_pst(board: Board, pst: dict, phase: Phase) -> None:
             if piece is None:
                 continue
 
-            weight = 1.0 if piece.moved or phase != Phase.OPENING else 0.2
+            weight = 1.0 if piece.moved or phase != Phase.OPENING else 0.25
 
             pst[phase.value][piece.color.value][piece.type.value][row][col] += weight
 
@@ -139,7 +139,7 @@ def build_pst() -> None:
     with open("pst.json", "w") as f:
         json.dump(pst, f)
 
-    print("pst.json created")
+    print("pst.json created!")
     print_pst(pst)
 
 
