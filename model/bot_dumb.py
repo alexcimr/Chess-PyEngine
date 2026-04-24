@@ -1,11 +1,11 @@
 from model.board import Board
-from model.enums import PieceType, Color, MoveType, GameStatus, Zorbist
+from model.enums import PieceType, Color, MoveType, GameStatus, Zobrist
 
 
 class Bot():
     def __init__(self, board: Board):
         self.board = board
-        # Zorbist
+        # Zobrist
         self.tt_white = {}
         self.tt_black = {}
 
@@ -29,11 +29,11 @@ class Bot():
         if zhash in tt:
             stored_depth, stored_eval, flag = tt[zhash]
             if stored_depth >= depth:
-                if flag == Zorbist.EXACT:
+                if flag == Zobrist.EXACT:
                     return stored_eval
-                elif flag == Zorbist.LOWERBOUND:
+                elif flag == Zobrist.LOWERBOUND:
                     alfa = max(alfa, stored_eval)
-                elif flag == Zorbist.UPPERBOUND:
+                elif flag == Zobrist.UPPERBOUND:
                     beta = min(beta, stored_eval)
 
                 if alfa >= beta:
@@ -73,13 +73,13 @@ class Bot():
                 if beta <= alfa:
                     break
 
-            # Zorbist - zapisywanie
+            # Zobrist - zapisywanie
             if maxEval <= orig_alfa:
-                tt[zhash] = (depth, maxEval, Zorbist.UPPERBOUND)
+                tt[zhash] = (depth, maxEval, Zobrist.UPPERBOUND)
             elif maxEval >= orig_beta:
-                tt[zhash] = (depth, maxEval, Zorbist.LOWERBOUND)
+                tt[zhash] = (depth, maxEval, Zobrist.LOWERBOUND)
             else:
-                tt[zhash] = (depth, maxEval, Zorbist.EXACT)
+                tt[zhash] = (depth, maxEval, Zobrist.EXACT)
 
             return maxEval
 
@@ -99,13 +99,13 @@ class Bot():
                 if beta <= alfa:
                     break
 
-            # Zorbist - zapisywnaie
+            # Zobrist - zapisywnaie
             if minEval >= orig_beta:
-                tt[zhash] = (depth, minEval, Zorbist.LOWERBOUND)
+                tt[zhash] = (depth, minEval, Zobrist.LOWERBOUND)
             elif minEval <= orig_alfa:
-                tt[zhash] = (depth, minEval, Zorbist.UPPERBOUND)
+                tt[zhash] = (depth, minEval, Zobrist.UPPERBOUND)
             else:
-                tt[zhash] = (depth, minEval, Zorbist.EXACT)
+                tt[zhash] = (depth, minEval, Zobrist.EXACT)
 
             return minEval
 
@@ -120,7 +120,7 @@ class Bot():
         if not moves:
             return None
 
-        # Zorbist
+        # Zobrist
         self.tt_white.clear()
         self.tt_black.clear()
 

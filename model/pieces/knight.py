@@ -9,9 +9,11 @@ class Knight():
 
     def moves(self, board, row: int, col: int) -> list[tuple[int, int]]:
         """
-        Zwraca listę pseudo-legalnych ruchów.
-        Uwzględnia zasady poruszania się figury i przeszkody,
-        ale NIE sprawdza, czy ruch pozostawia króla pod szachem.
+        Returns a list of pseudo-legal destination squares.
+
+        Jumps in an L-shape (±1, ±2) or (±2, ±1), ignores all pieces in
+        between.  Cannot land on a friendly piece.
+        Does NOT verify that the resulting position leaves the king out of check.
         """
         moves = []
         opp_color = Color.BLACK if self.color == Color.WHITE else Color.WHITE

@@ -26,7 +26,12 @@ class GameStatus(Enum):
     CHECKMATE = 2
     STALEMATE = 3
 
-class Zorbist(Enum):
+class Zobrist(Enum):
     EXACT = 1
     UPPERBOUND = 2
     LOWERBOUND = 3
+
+class Phase(Enum):
+    OPENING = "opening"
+    MIDGAME = "midgame"
+    ENDGAME = "endgame"

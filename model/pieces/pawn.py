@@ -10,40 +10,37 @@ class Pawn():
 
     def moves(self, board, row: int, col: int) -> list[tuple[int, int]]:
         """
-        Zwraca listę pseudo-legalnych ruchów.
-        Uwzględnia zasady poruszania się figury i przeszkody,
-        ale NIE sprawdza, czy ruch pozostawia króla pod szachem.
-        Ruch specjalny: en passant (bicie w przelocie)
+        Returns a list of pseudo-legal destination squares.
+
+        Covers forward pushes (one or two squares from the starting rank),
+        diagonal captures, and en-passant captures.
+        Does NOT verify that the resulting position leaves the king out of check.
         """
         moves = []
-        move_value = self.color.value # -1 (czarne) or 1 (białe)
+        move_value = self.color.value  # color.value is +1 for White and -1 for Black
         opp_color = Color.BLACK if self.color == Color.WHITE else Color.WHITE
 
-        # Bicie w prawo (z uwzglednieniem en passant)
-        if is_on_board(row + move_value, col + 1):
+        # Diagonal captures (including en passant)
+        for dc in (-1, 1):
             target_row = row + move_value
-            target_col = col + 1
-            tile = board.get_piece_color(target_row, target_col)
-            if tile == opp_color:
-                moves.append((target_row, target_col))
-            elif tile == None and board.enpassant_tile == (target_row, target_col):
-                if board.get_piece_type(row, col + 1) == PieceType.PAWN and board.get_piece_color(row, col + 1) == opp_color:
-                    moves.append((target_row, target_col))
-        # Bicie w lewo (z uwzglednieniem en passant)
-        if is_on_board(row + move_value, col - 1):
-            target_row = row + move_value
-            target_col = col - 1
-            tile = board.get_piece_color(target_row, target_col)
-            if tile == opp_color:
-                moves.append((target_row, target_col))
-            elif tile == None and board.enpassant_tile == (target_row, target_col):
-                if board.get_piece_type(row, col - 1) == PieceType.PAWN and board.get_piece_color(row, col - 1) == opp_color:
-                    moves.append((target_row, target_col))
+            target_col = col + dc
+            if not is_on_board(target_row, target_col):
+                continue
 
-        # Pchanie
+            if board.get_piece_color(target_row, target_col) == opp_color:
+                # Normal capture
+                moves.append((target_row, target_col))
+            elif (board.enpassant_tile == (target_row, target_col)
+                  and board.get_piece_type(row, target_col) == PieceType.PAWN
+                  and board.get_piece_color(row, target_col) == opp_color):
+                # En passant: the captured pawn sits beside us on the same rank
+                moves.append((target_row, target_col))
+
+        # Forward push
         if board.is_empty(row + move_value, col):
             moves.append((row + move_value, col))
 
+            # Double push from the starting rank
             if self.color == Color.WHITE and row == 1 and board.is_empty(row + 2, col):
                 moves.append((row + 2, col))
 

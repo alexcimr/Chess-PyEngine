@@ -1,7 +1,10 @@
 from model.enums import PieceType, Color
 
+
+
 PST_SCALE = 1/16
-# Wartości materialne
+
+# Maps each piece type
 pieces = [
     PieceType.PAWN,
     PieceType.KNIGHT,
@@ -11,7 +14,9 @@ pieces = [
     PieceType.KING
 ]
 
-# Tablice PTS dla czarnych
+# Each table is defined from Black's perspective (row 0 = rank 1).
+# White's table is derived by mirroring vertically (row 7 - row).
+# Positive values = good squares for that piece, negative = bad.
 _PAWN_PST = [
     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
     [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2],
@@ -93,8 +98,8 @@ EVAL_TABLE = {
     Color.BLACK: {}
 }
 
+# Final lookup table
 for piece_type in pieces:
-    # Puste szachownice 8x8 dla obu kolorów
     EVAL_TABLE[Color.WHITE][piece_type] = [[0.0 for _ in range(8)] for _ in range(8)]
     EVAL_TABLE[Color.BLACK][piece_type] = [[0.0 for _ in range(8)] for _ in range(8)]
 
@@ -102,6 +107,7 @@ for piece_type in pieces:
 
     for row in range(8):
         for col in range(8):
+            # White sees the board mirrored
             white_pst_row = 7 - row
             EVAL_TABLE[Color.WHITE][piece_type][row][col] = pst[white_pst_row][col] * PST_SCALE
 

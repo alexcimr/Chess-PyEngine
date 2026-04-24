@@ -3,49 +3,54 @@ from model.enums import PieceType, Color, MoveType, GameStatus
 from model.pieces import Pawn, Rook, Knight, Bishop, Queen, King
 from model.utils import is_on_board
 
-# --- ZOBRIST HASHING ---
+
+# Zobrist hashing assigns a random 64-bit number to each
+# (piece_type, color, square) combination. XOR-ing those numbers
+# together gives a hash that can be updated incrementally with each
+# move instead of being recomputed from scratch, which makes
+# transposition-table lookups fast.
+
 random.seed(42)
 
-# 1. Figury na planszy
+# One random value per (piece_type, color, row, col)
 ZOBRIST_PIECES = {}
 for pt in PieceType:
     ZOBRIST_PIECES[pt] = {}
     for c in Color:
         ZOBRIST_PIECES[pt][c] = [[random.getrandbits(64) for _ in range(8)] for _ in range(8)]
 
-# 2. En Passant
+# One value per file (column) representing the en-passant right
 ZOBRIST_ENPASSANT = [random.getrandbits(64) for _ in range(8)]
 
-# 3. Prawa do roszady
+# One value per castling right
 ZOBRIST_CASTLING = {
-    "WK": random.getrandbits(64),
-    "WQ": random.getrandbits(64),
-    "BK": random.getrandbits(64),
-    "BQ": random.getrandbits(64)
+    "WK": random.getrandbits(64),   # White king-side
+    "WQ": random.getrandbits(64),   # White queen-side
+    "BK": random.getrandbits(64),   # Black king-side
+    "BQ": random.getrandbits(64),   # Black queen-side
 }
 
 class Board():
-    def __init__(self):
+    def __init__(self) -> None:
         self.grid = [[None for _ in range(8)] for _ in range(8)]
-        self.enpassant_tile = None # Puste pole ktore można zbić pionkim
+        self.enpassant_tile = None  # Square that can be captured via en passant
         self.white_king_pos = None
         self.black_king_pos = None
 
-        # Zorbist hash
-        self.current_hash = 0
+        self.current_hash = 0 # Zorbist hash
 
-    def clear_board(self):
+    def clear_board(self) -> None:
         self.grid = [[None for _ in range(8)] for _ in range(8)]
         self.enpassant_tile = None
         self.white_king_pos = None
         self.black_king_pos = None
         self.current_hash = 0
 
-    def setup_start_position(self):
-        """Ustawia figury na pozycjach startowych dla nowej gry."""
+    def setup_start_position(self) -> None:
+        """Places all pieces in their standard chess starting positions."""
         self.clear_board()
 
-        # --- BIAŁE ---
+        # --- White pieces ---
         self.grid[0][0] = Rook(Color.WHITE)
         self.grid[0][7] = Rook(Color.WHITE)
         self.grid[0][1] = Knight(Color.WHITE)
@@ -57,7 +62,7 @@ class Board():
         for i in range(8):
             self.grid[1][i] = Pawn(Color.WHITE)
 
-        # --- CZARNE ---
+        # --- Black pieces ---
         self.grid[7][0] = Rook(Color.BLACK)
         self.grid[7][7] = Rook(Color.BLACK)
         self.grid[7][1] = Knight(Color.BLACK)
@@ -74,14 +79,14 @@ class Board():
         self.update_zobrist_hash()
 
     def is_empty(self, row: int, col: int) -> bool:
-        """Zwraca True, jeśli pole jest na planszy i jest puste."""
+        """Returns True if the square is on the board and contains no piece."""
         if not is_on_board(row, col):
             return False
 
         return self.grid[row][col] is None
 
     def get_piece_type(self, row: int, col: int) -> PieceType | None:
-        """Zwraca typ figury lub None, jeśli pole puste."""
+        """Returns the type of the piece on the square, or None if empty/off-board."""
         if not is_on_board(row, col):
             return None
 
@@ -91,7 +96,7 @@ class Board():
         return piece.type
 
     def get_piece_color(self, row: int, col: int) -> Color | None:
-        """Zwraca kolor figury lub None, jeśli pole puste."""
+        """Returns the color of the piece on the square, or None if empty/off-board."""
         if not is_on_board(row, col):
             return None
 
@@ -102,9 +107,12 @@ class Board():
 
 
     def is_tile_in_check(self, row: int, col: int, attacking_color: Color) -> bool:
-        """Sprawdza, czy pole (row, col) jest atakowane przez dany kolor. Zwraca True lub False."""
+        """
+        Returns True if the square (row, col) is attacked by any piece of
+        attacking_color. Used for check detection and castling validation.
+        """
 
-        # Pionek
+        # Pawns
         for dc in [-1, 1]:
             r = row - attacking_color.value
             c = col + dc
@@ -113,7 +121,7 @@ class Board():
                 if piece is not None and piece.color == attacking_color and piece.type == PieceType.PAWN:
                     return True
 
-        # Skoczek
+        # Knigts
         knight_jumps = [
             (-2, -1), (-2, 1),
             (-1, -2), (-1, 2),
@@ -127,7 +135,7 @@ class Board():
                 if piece is not None and piece.color == attacking_color and piece.type == PieceType.KNIGHT:
                     return True
 
-        # Wieża + Hetman
+        # Rooks + Queens
         straight_directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
         for dr, dc in straight_directions:
             r, c = row + dr, col + dc
@@ -140,7 +148,7 @@ class Board():
                 r += dr
                 c += dc
 
-        # Goniec + Hetman
+        # Bishops + Queens
         diagonal_directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
         for dr, dc in diagonal_directions:
             r, c = row + dr, col + dc
@@ -153,7 +161,7 @@ class Board():
                 r += dr
                 c += dc
 
-        # Król
+        # King
         king_moves = [
             (-1, -1), (-1, 0), (-1, 1),
             (0, -1), (0, 1),
@@ -169,61 +177,64 @@ class Board():
         return False
 
 
-    def make_move(self, start_pos: tuple[int, int], end_pos: tuple[int, int], move_type=MoveType.NORMAL) -> tuple:
-        """Robi ruch na planszy i zwraca stare wartosci potrzebne do undo."""
+    def make_move(self, start_pos: tuple[int, int], end_pos: tuple[int, int], move_type: MoveType = MoveType.NORMAL) -> dict:
+        """
+        Applies a move to the board and returns an undo bundle.
+
+        The undo bundle contains everything needed to restore the board to
+        its exact state before this call.
+        """
         sr, sc = start_pos
         er, ec = end_pos
 
-        # Pobieramy figure i zapisujemy stany do cofniecia
         piece = self.grid[sr][sc]
         captured_piece = self.grid[er][ec]
         old_moved_status = piece.moved
         old_enpassant_status = self.enpassant_tile
         old_hash = self.current_hash
 
-        # Zorbist wylaczanie
-        self.current_hash ^= self.get_castling_hash()  # Wyłączamy stare prawa roszady
+        # Zobrist: remove outgoing state
+        self.current_hash ^= self.get_castling_hash()   # Remove old castling rights
         if self.enpassant_tile is not None:
             self.current_hash ^= ZOBRIST_ENPASSANT[self.enpassant_tile[1]]
         self.current_hash ^= ZOBRIST_PIECES[piece.type][piece.color][sr][sc]
         if captured_piece is not None:
             self.current_hash ^= ZOBRIST_PIECES[captured_piece.type][captured_piece.color][er][ec]
 
-
-        # Ustawiamy enpassant jesli pion skacze o 2 pola
+        # En-passant right: set when a pawn double-pushes
         if piece.type == PieceType.PAWN and abs(sr - er) == 2:
-            self.enpassant_tile = ((sr + er) // 2, sc) # Pole za pionkiem
-            self.current_hash ^= ZOBRIST_ENPASSANT[self.enpassant_tile[1]] # Zorbist
+            self.enpassant_tile = ((sr + er) // 2, sc)  # Square behind the pawn
+            self.current_hash ^= ZOBRIST_ENPASSANT[self.enpassant_tile[1]]
         else:
             self.enpassant_tile = None
 
-        # Ruch figury
+        # Move the piece
         self.grid[er][ec] = piece
         self.grid[sr][sc] = None
         piece.moved = True
 
-        # Obsluga ruchow specjalnych
+        # Special move handling
         if move_type == MoveType.PROMOTION_QUEEN:
             self.grid[er][ec] = Queen(piece.color)
             self.grid[er][ec].moved = True
-        # Roszada
+
         elif move_type == MoveType.CASTLING:
-            # Przesuwamy wieze
-            if ec == 1:
+            # Move the rook to its post-castling square
+            if ec == 1: # King-side: rook travels from col 0 to col 2
                 self.grid[sr][2] = self.grid[sr][0]
                 self.grid[sr][0] = None
                 self.grid[sr][2].moved = True
-                # ZOBRIST: Przesuwamy wieżę
+
                 self.current_hash ^= ZOBRIST_PIECES[PieceType.ROOK][piece.color][sr][0]
                 self.current_hash ^= ZOBRIST_PIECES[PieceType.ROOK][piece.color][sr][2]
-            elif ec == 5:
+            elif ec == 5:   # Queen-side: rook travels from col 7 to col 4
                 self.grid[sr][4] = self.grid[sr][7]
                 self.grid[sr][7] = None
                 self.grid[sr][4].moved = True
-                # ZOBRIST: Przesuwamy wieżę
+
                 self.current_hash ^= ZOBRIST_PIECES[PieceType.ROOK][piece.color][sr][7]
                 self.current_hash ^= ZOBRIST_PIECES[PieceType.ROOK][piece.color][sr][4]
-        # Promocje
+
         elif move_type == MoveType.PROMOTION_ROOK:
             self.grid[er][ec] = Rook(piece.color)
             self.grid[er][ec].moved = True
@@ -235,12 +246,11 @@ class Board():
         elif move_type == MoveType.PROMOTION_KNIGHT:
             self.grid[er][ec] = Knight(piece.color)
             self.grid[er][ec].moved = True
-        # En passant
+
         elif move_type == MoveType.EN_PASSANT:
-            # Zbicie piona w przelocie
+            # The captured pawn sits beside the moving pawn, not on end_pos
             captured_piece = self.grid[sr][ec]
             self.grid[sr][ec] = None
-            # ZOBRIST: Dodatkowe usunięcie piona zbitego w przelocie
             self.current_hash ^= ZOBRIST_PIECES[captured_piece.type][captured_piece.color][sr][ec]
 
         if piece.type == PieceType.KING:
@@ -249,14 +259,11 @@ class Board():
             else:
                 self.black_king_pos = end_pos
 
-        # Zorbist - przenoszenie figury + promocja
+        # Zobrist: add incoming stat
         nowa_figura = self.grid[er][ec]
         self.current_hash ^= ZOBRIST_PIECES[nowa_figura.type][nowa_figura.color][er][ec]
-
-        # Zorbist wlaczanie roszad
         self.current_hash ^= self.get_castling_hash()
 
-        # Dane do undo
         undo_data = {
             "captured": captured_piece,
             "moved": old_moved_status,
@@ -266,28 +273,29 @@ class Board():
 
         return undo_data
 
-    def undo_move(self, start_pos: tuple[int, int], end_pos: tuple[int, int], undo_data: dict, move_type=MoveType.NORMAL):
-        """Cofa ruch, przywracając zbitą figurę i flagi (moved, enpassant)."""
+    def undo_move(self, start_pos: tuple[int, int], end_pos: tuple[int, int], undo_data: dict, move_type: MoveType = MoveType.NORMAL) -> None:
+        """
+        Reverts a move using the bundle returned by make_move.
+
+        Restores the piece, captured piece, en-passant flag, moved flag,
+        and Zobrist hash to their pre-move values.
+        """
         sr, sc = start_pos
         er, ec = end_pos
 
-        # Zorbist hash undo
+        # Restore the hash directly
         self.current_hash = undo_data["hash"]
 
-        # Cofamy figure na pole startowe
         piece = self.grid[er][ec]
         piece.moved = undo_data["moved"]
-        self.grid[sr][sc] = piece
-
-        # Przywracamy flage enpassant
+        self.grid[sr][sc] = piece   # Move piece back to origin
         self.enpassant_tile = undo_data["passant"]
 
-        # Przywracamy figure na pole docelowe
         if move_type == MoveType.NORMAL:
             self.grid[er][ec] = undo_data["captured"]
 
         elif move_type == MoveType.CASTLING:
-            # Cofamy wieze na jej miejsce
+            # Return the rook to its pre-castling square
             self.grid[er][ec] = None
             if ec == 1:
                 self.grid[sr][0] = self.grid[sr][2]
@@ -299,16 +307,17 @@ class Board():
                 self.grid[sr][7].moved = False
 
         elif move_type.value >= 4:  # Promocja
-            # Zamieniamy figure z powrotem na Piona
+            # Replace promoted piece with a pawn again
             self.grid[sr][sc] = Pawn(piece.color)
             self.grid[sr][sc].moved = undo_data["moved"]
             self.grid[er][ec] = undo_data["captured"]
 
         elif move_type == MoveType.EN_PASSANT:
-            # Oddajemy piona na pole obok
+            # Re-place the captured pawn beside the moved pawn
             self.grid[sr][ec] = undo_data["captured"]
             self.grid[er][ec] = None
 
+        # Update king position
         if piece.type == PieceType.KING:
             if piece.color == Color.WHITE:
                 self.white_king_pos = start_pos
@@ -316,7 +325,13 @@ class Board():
                 self.black_king_pos = start_pos
 
     def get_legal_moves(self, row: int, col: int) -> list[tuple]:
-        """Zwraca listę legalnych ruchów (takich, które nie narażają króla na szach) i typ ruchu."""
+        """
+        Returns all fully legal moves for the piece on (row, col).
+
+        A move is legal if it is pseudo-legal AND leaves the moving side's
+        king out of check. The check is done by making the move, testing
+        the king's square, then undoing the move.
+        """
         legal_moves = []
         piece = self.grid[row][col]
         pseudo_moves = piece.moves(self, row, col)
@@ -329,8 +344,8 @@ class Board():
             MoveType.PROMOTION_BISHOP, MoveType.PROMOTION_KNIGHT
         ]
 
-        # Funkcja pomocnicza: Zrob ruch -> Sprawdz krola czy nie w szachu -> Cofnij
-        def is_safe(start_pos: tuple[int, int], end_pos: tuple[int, int], move_type: MoveType):
+        def is_safe(start_pos: tuple[int, int], end_pos: tuple[int, int], move_type: MoveType) -> bool:
+            """Make move -> check if our king is safe -> undo."""
             undo_data = self.make_move(start_pos, end_pos, move_type)
 
             if piece_color == Color.WHITE:
@@ -345,36 +360,36 @@ class Board():
         for end_row, end_col in pseudo_moves:
             end_pos = (end_row, end_col)
 
-            # Logika dla Piona (promocje i en passant)
             if piece.type == PieceType.PAWN:
                 if end_row == 0 or end_row == 7:
+                    # Pawn reached the back rank – generate all four promotions
                     for promoted in promotes:
                         if is_safe(start_pos, end_pos, promoted):
                             legal_moves.append((end_pos, promoted))
-                elif self.grid[end_row][end_col] is None and col != end_col:  # czy zrobil en passant?
+                elif self.grid[end_row][end_col] is None and col != end_col:
+                    # Diagonal move to an empty square -> en passant
                     if is_safe(start_pos, end_pos, MoveType.EN_PASSANT):
                         legal_moves.append((end_pos, MoveType.EN_PASSANT))
                 else:
                     if is_safe(start_pos, end_pos, MoveType.NORMAL):
                         legal_moves.append((end_pos, MoveType.NORMAL))
 
-            # Logika dla Krola (roszady)
             elif piece.type == PieceType.KING:
+                # King moves two squares -> castling
                 if abs(col - end_col) == 2:
                     if is_safe(start_pos, end_pos, MoveType.CASTLING):
                         legal_moves.append((end_pos, MoveType.CASTLING))
                 else:
                     if is_safe(start_pos, end_pos, MoveType.NORMAL):
                         legal_moves.append((end_pos, MoveType.NORMAL))
-            # Logika dla reszty
             else:
                 if is_safe(start_pos, end_pos, MoveType.NORMAL):
                     legal_moves.append((end_pos, MoveType.NORMAL))
 
         return legal_moves
 
-    def update_king_positions(self):
-        """Ustala kordy dla kroli"""
+    def update_king_positions(self) -> None:
+        """Scans the board and refreshes the cached king coordinates."""
         for r in range(8):
             for c in range(8):
                 piece = self.grid[r][c]
@@ -385,7 +400,13 @@ class Board():
                         self.black_king_pos = (r, c)
 
     def game_status(self, king_color: Color) -> GameStatus:
-        """Zwraca status gry dla danego koloru: normalnie, mat albo pat."""
+        """
+        Returns the game status from the perspective of king_color.
+
+        If king_color has no legal moves:
+        - Checkmate if the king is currently in check.
+        - Stalemate otherwise.
+        """
         opp_color = Color.WHITE if king_color == Color.BLACK else Color.BLACK
 
         for row in range(8):
@@ -404,6 +425,12 @@ class Board():
         return GameStatus.STALEMATE
 
     def all_legal_moves(self, color: Color) -> list[tuple[tuple, int]]:
+        """
+        Returns all legal moves for all pieces of the given color.
+
+        Moves that win material (captures, promotions) are sorted first
+        to improve alpha-beta pruning efficiency.
+        """
         high_priority = []
         quiet_moves = []
 
@@ -426,10 +453,16 @@ class Board():
         return high_priority + quiet_moves
 
     def tile_value(self, row: int, col: int, move_type: MoveType) -> int:
+        """
+        Heuristic score for move ordering.
+
+        Captures and promotions receive positive scores so they are
+        searched before quiet moves, improving alpha-beta pruning.
+        """
         points = 0
         piece = self.grid[row][col]
         if piece is not None:
-            points += piece.point_value
+            points += piece.point_value  # Value of the captured piece
 
         if move_type.value >= 3:
             if move_type == MoveType.PROMOTION_QUEEN:
@@ -445,28 +478,33 @@ class Board():
 
         return points
 
-    def update_zobrist_hash(self):
-        """Liczy hash Zobrista od zera dla obecnego stanu planszy."""
+    def update_zobrist_hash(self) -> None:
+        """
+        Recomputes the Zobrist hash from scratch.
+
+        Should only be called once after board setup or when loading a
+        position. During play the hash is maintained incrementally in
+        make_move / undo_move.
+        """
         self.current_hash = 0
 
-        # 1. Figury
         for r in range(8):
             for c in range(8):
                 piece = self.grid[r][c]
                 if piece is not None:
-                    # Dodajemy figurę do hasha (operator XOR ^= )
                     self.current_hash ^= ZOBRIST_PIECES[piece.type][piece.color][r][c]
 
-        # 2. En Passant
         if self.enpassant_tile is not None:
-            kolumna = self.enpassant_tile[1]  # Bierzemy tylko kolumnę 'c'
+            kolumna = self.enpassant_tile[1]
             self.current_hash ^= ZOBRIST_ENPASSANT[kolumna]
 
-        # 3. Prawa do roszady
         self.current_hash ^= self.get_castling_hash()
 
     def get_castling_hash(self) -> int:
-        """Sprawdza na planszy, kto jeszcze nie ruszył królem/wieżą i zwraca ich hash."""
+        """
+        Returns the XOR of Zobrist values for all currently available
+        castling rights, determined by whether kings and rooks have moved.
+        """
         h = 0
         white_king = self.grid[0][3]
         if white_king is not None and white_king.type == PieceType.KING and not white_king.moved:
@@ -487,7 +525,12 @@ class Board():
                 h ^= ZOBRIST_CASTLING["BK"]
         return h
 
-    def eval_position(self):
+    def eval_position(self) -> float:
+        """
+        Simple material-only evaluation.
+        White: +
+        Black: -.
+        """
         res = 0
         for row in range(8):
             for col in range(8):
@@ -496,7 +539,8 @@ class Board():
                     res += piece.point_value * piece.color.value
         return res
 
-    def material_on_board(self):
+    def material_on_board(self) -> int:
+        """Returns the total material (sum of point values) still on the board."""
         res = 0
         for row in range(8):
             for col in range(8):

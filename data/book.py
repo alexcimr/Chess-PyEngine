@@ -3,14 +3,33 @@ import chess.pgn
 from model.board import Board
 from model.enums import MoveType
 
-# Ustawienia
-PGN_FILE = "lichess_elite_2025-11.pgn" #https://database.nikonoel.fr/
+# Settings
+PGN_FILE = "lichess_elite_2025-11.pgn"  # https://database.nikonoel.fr/
 MAX_GAMES_TO_READ = 200000
 MOVES_PER_GAME = 20
 MIN_MOVES_PLAYED = 4
 
+def print_book_stats(filtered_book: dict, games_read: int) -> None:
+    """Prints a summary of the generated opening book."""
+    stats = {
+        "games read": games_read,
+        "book size": len(filtered_book['white']) + len(filtered_book['black']),
+        "max moves per game": MOVES_PER_GAME,
+        "min times played": MIN_MOVES_PLAYED,
+    }
+    print("  book.json created")
+    print("=" * 30)
+    for key, val in stats.items():
+        print(f"  {key:<18} {val}")
+    print("=" * 30 + "\n")
 
-def uci_to_board_move(board: Board, uci: str):
+def uci_to_board_move(board: Board, uci: str) -> tuple:
+    """
+    Converts a UCI string into an internal board move tuple.
+
+    Returns None if the square is empty or the move is not legal.
+    """
+    # Convertion from UCI to board's
     start_col = ord('h') - ord(uci[0].lower())
     start_row = int(uci[1]) - 1
     end_col = ord('h') - ord(uci[2].lower())
@@ -19,23 +38,27 @@ def uci_to_board_move(board: Board, uci: str):
     start_pos = (start_row, start_col)
     end_pos = (end_row, end_col)
 
+    # Gets the MoveType
     promo_char = uci[4] if len(uci) == 5 else None
     if promo_char:
         promos = {'q': MoveType.PROMOTION_QUEEN, 'r': MoveType.PROMOTION_ROOK,
                   'b': MoveType.PROMOTION_BISHOP, 'n': MoveType.PROMOTION_KNIGHT}
         return start_pos, end_pos, promos[promo_char]
 
-    if board.grid[start_row][start_col] is None:
-        return None
-
     legal_moves = board.get_legal_moves(start_row, start_col)
     for move_end, move_type in legal_moves:
         if move_end == end_pos:
             return start_pos, end_pos, move_type
-    return None
 
+def build_book() -> None:
+    """
+    Reads PGN games and builds a weighted opening book saved as book.json.
 
-def build_book():
+    Each position is identified by its Zobrist hash. For every hash the book
+    stores a dict of move_string -> count, where count is how many times that
+    move was played in the dataset. Moves played fewer than MIN_MOVES_PLAYED
+    times are filtered out to remove noise.
+    """
     book = {"white": {}, "black": {}}
     board = Board()
 
@@ -43,36 +66,41 @@ def build_book():
         games_read = 0
         while games_read < MAX_GAMES_TO_READ:
             game = chess.pgn.read_game(pgn)
-            if game is None: break
+            if game is None: 
+                break
 
             board.setup_start_position()
-            ply_count = 0
+            moves_count = 0
             for move in game.mainline_moves():
-                if ply_count >= MOVES_PER_GAME: break
+                if moves_count >= MOVES_PER_GAME: 
+                    break
 
-                side = "white" if ply_count % 2 == 0 else "black"
+                side = "white" if moves_count % 2 == 0 else "black"
                 zhash = str(board.current_hash)
                 b_move = uci_to_board_move(board, move.uci())
 
-
+                # Encode the move as a 5-digit string: start_row, start_col, end_row, end_col, move_type.value
                 sr, sc = b_move[0]
                 er, ec = b_move[1]
                 move_type_val = b_move[2].value
-                my_move_str = f"{sr}{sc}{er}{ec}{move_type_val}"
+                move_str = f"{sr}{sc}{er}{ec}{move_type_val}"
 
                 if zhash not in book[side]:
                     book[side][zhash] = {}
 
-                if my_move_str not in book[side][zhash]:
-                    book[side][zhash][my_move_str] = 0
+                if move_str not in book[side][zhash]:
+                    book[side][zhash][move_str] = 0
 
-                book[side][zhash][my_move_str] += 1
+                book[side][zhash][move_str] += 1
 
                 board.make_move(*b_move)
-                ply_count += 1
-            games_read += 1
+                moves_count += 1
 
-    # Filtrowanie
+            games_read += 1
+            if games_read % 10000 == 0:
+                print(f"{games_read}/{MAX_GAMES_TO_READ} games processed")
+
+    # Filter out rare moves to keep the book clean
     filtered_book = {"white": {}, "black": {}}
     for side in ["white", "black"]:
         for h, moves in book[side].items():
@@ -83,14 +111,7 @@ def build_book():
     with open("book.json", "w") as f:
         json.dump(filtered_book, f)
 
-    print("=============================")
-    print("book.json created with:")
-    print(f"games read: {games_read}")
-    print(f"book size: {len(filtered_book['white']) + len(filtered_book['black'])}")
-    print(f"max moves per game: {MOVES_PER_GAME}")
-    print(f"min games played: {MIN_MOVES_PLAYED}")
-    print("=============================")
-
+    print_book_stats(filtered_book, games_read)
 
 if __name__ == "__main__":
     build_book()
