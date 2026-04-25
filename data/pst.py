@@ -12,6 +12,28 @@ OPENING_THRESHOLD = 50
 MIDGAME_THRESHOLD = 12
 
 
+PAWN_ENDGAME = [
+    [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
+    [0.10, 0.10, 0.10, 0.10, 0.10, 0.10, 0.10, 0.10],
+    [0.07, 0.07, 0.07, 0.07, 0.07, 0.07, 0.07, 0.07],
+    [0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05],
+    [0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0.03],
+    [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+    [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
+    [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
+]
+
+KING_ENDGAME = [
+    [0.00, 0.01, 0.02, 0.02, 0.02, 0.02, 0.01, 0.00],
+    [0.01, 0.04, 0.05, 0.05, 0.05, 0.05, 0.04, 0.01],
+    [0.02, 0.05, 0.06, 0.07, 0.07, 0.06, 0.05, 0.02],
+    [0.02, 0.05, 0.07, 0.08, 0.08, 0.07, 0.05, 0.02],
+    [0.02, 0.05, 0.07, 0.08, 0.08, 0.07, 0.05, 0.02],
+    [0.02, 0.05, 0.06, 0.07, 0.07, 0.06, 0.05, 0.02],
+    [0.01, 0.04, 0.05, 0.05, 0.05, 0.05, 0.04, 0.01],
+    [0.00, 0.01, 0.02, 0.02, 0.02, 0.02, 0.01, 0.00],
+]
+
 def material_count(board: Board, row: int, col: int, move_type: MoveType) -> int:
     """
     Calculates the change in total material caused by a move.
@@ -136,8 +158,14 @@ def build_pst() -> None:
                         for c in range(8):
                             table[r][c] /= (max_val * 10)
 
+    for color in pst["endgame"]:
+        pst["endgame"][color][PieceType.KING.value] = KING_ENDGAME
+
+    pst["endgame"][Color.WHITE.value][PieceType.PAWN.value] = PAWN_ENDGAME[::-1]
+    pst["endgame"][Color.BLACK.value][PieceType.PAWN.value] = PAWN_ENDGAME
+
     with open("pst.json", "w") as f:
-        json.dump(pst, f)
+        json.dump(pst, f, indent=4)
 
     print("pst.json created!")
     print_pst(pst)

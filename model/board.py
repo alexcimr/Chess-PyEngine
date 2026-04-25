@@ -4,12 +4,7 @@ from model.pieces import Pawn, Rook, Knight, Bishop, Queen, King
 from model.utils import is_on_board
 
 
-# Zobrist hashing assigns a random 64-bit number to each
-# (piece_type, color, square) combination. XOR-ing those numbers
-# together gives a hash that can be updated incrementally with each
-# move instead of being recomputed from scratch, which makes
-# transposition-table lookups fast.
-
+# Zobrist hashing
 random.seed(42)
 
 # One random value per (piece_type, color, row, col)

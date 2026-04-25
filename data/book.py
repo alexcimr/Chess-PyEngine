@@ -5,7 +5,7 @@ from model.enums import MoveType
 
 # Settings
 PGN_FILE = "lichess_elite_2025-11.pgn"  # https://database.nikonoel.fr/
-MAX_GAMES_TO_READ = 280000
+MAX_GAMES_TO_READ = 300000
 MOVES_PER_GAME = 20
 MIN_MOVES_PLAYED = 3
 

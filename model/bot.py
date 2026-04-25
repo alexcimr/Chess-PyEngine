@@ -100,7 +100,7 @@ class Bot():
 
     def minimax(self, depth: int, pos_eval: float, maximazing_color: Color, alfa: float, beta: float) -> float:
         """
-        Minimax search with alpha-beta pruning and Zobrist transposition tables.
+        Minimax search with alpha-beta pruning, Zobrist transposition tables and Quiescence search.
 
         Args:
             depth:            Remaining half-moves to search.
@@ -112,7 +112,7 @@ class Bot():
         Returns:
             The evaluated score for the current position.
         """
-        if depth == 0:
+        if depth == -5: # hard limit
             return pos_eval
 
         # Transposition table lookup
@@ -135,7 +135,23 @@ class Bot():
         orig_alfa = alfa
         orig_beta = beta
 
-        moves = self.board.all_legal_moves(maximazing_color)
+        # Quiescence search at depth <= 0
+        if depth <= 0:
+            if maximazing_color == Color.WHITE:
+                if pos_eval >= beta:
+                    return beta
+                alfa = max(alfa, pos_eval)
+            else:
+                if pos_eval <= alfa:
+                    return alfa
+                beta = min(beta, pos_eval)
+
+            captures = [(m, s) for m, s in self.board.all_legal_moves(maximazing_color) if s > 0]
+            if not captures:
+                return pos_eval
+            moves = captures
+        else:
+            moves = self.board.all_legal_moves(maximazing_color)
 
         # Checks for checkmate or stalemate
         if not moves:
@@ -153,7 +169,7 @@ class Bot():
                 return 0    # Stalemate
 
         if maximazing_color == Color.WHITE:
-            maxEval = -float('inf')
+            maxEval = pos_eval if depth <= 0 else -float('inf') # Standing pat
             for move, score in moves:
                 curr_eval = pos_eval + score + self.eval_table_diff(*move)
 
@@ -179,7 +195,7 @@ class Bot():
             return maxEval
 
         elif maximazing_color == Color.BLACK:
-            minEval = float('inf')
+            minEval = pos_eval if depth <= 0 else float('inf')   # Standing pat
             for move, score in moves:
                 curr_eval = pos_eval - score + self.eval_table_diff(*move)
                 undo_data = self.board.make_move(*move)
@@ -216,7 +232,8 @@ class Bot():
             return book_move
 
         # Set PST for the current game phase
-        self.current_pst = self.pst[self.get_phase()]
+        phase = self.get_phase()
+        self.current_pst = self.pst[phase]
 
         alfa = -float('inf')
         beta = float('inf')
@@ -232,6 +249,7 @@ class Bot():
         self.tt_black.clear()
 
         best_move = moves[0][0]
+        best_score = moves[0][1]
         if maximazing_color == Color.WHITE:
             maxEval = -float('inf')
             for move, score in moves:
@@ -240,11 +258,12 @@ class Bot():
 
                 eval = self.minimax(depth - 1, curr_eval, Color.BLACK, alfa, beta)
 
-                if eval > maxEval:
+                self.board.undo_move(move[0], move[1], undo_data, move[2])
+
+                if self.is_better(eval, maxEval, score, best_score, phase, maximazing_color):
                     maxEval = eval
                     best_move = move
-
-                self.board.undo_move(move[0], move[1], undo_data, move[2])
+                    best_score = score
 
                 alfa = max(alfa, eval)
 
@@ -256,11 +275,12 @@ class Bot():
 
                 eval = self.minimax(depth - 1, curr_eval, Color.WHITE, alfa, beta)
 
-                if eval < minEval:
+                self.board.undo_move(move[0], move[1], undo_data, move[2])
+
+                if self.is_better(eval, minEval, score, best_score, phase, maximazing_color):
                     minEval = eval
                     best_move = move
-
-                self.board.undo_move(move[0], move[1], undo_data, move[2])
+                    best_score = score
 
                 beta = min(beta, eval)
 
@@ -294,3 +314,25 @@ class Bot():
         elif material >= MIDGAME_THRESHOLD:
             return Phase.MIDGAME
         return Phase.ENDGAME
+
+    def is_better(self, eval, best_eval, score, best_score, phase, color):
+        """
+        Returns True if this move should replace the current best move.
+        In endgames, if evals are almost equal, prefer a capture over a quiet move
+        """
+        eps = 0.03 if phase == Phase.ENDGAME else 0.0
+        is_capture = score > 0
+        best_is_capture = best_score > 0
+
+        if color == Color.WHITE:
+            if is_capture and not best_is_capture:
+                return eval > best_eval - eps
+            if not is_capture and best_is_capture:
+                return eval > best_eval + eps
+            return eval > best_eval
+        else:
+            if is_capture and not best_is_capture:
+                return eval < best_eval + eps
+            if not is_capture and best_is_capture:
+                return eval < best_eval - eps
+            return eval < best_eval

@@ -26,7 +26,7 @@ COLOR_RED      = (180, 120, 120)
 COLOR_YELLOW   = (180, 150, 70)
 COLOR_BLUE     = (70, 100, 140)
 
-BOT_DEPTH = 5
+BOT_DEPTH = START_DEPTH = 4
 
 PIECES = {
     (PieceType.KING,   Color.WHITE): "♔", (PieceType.QUEEN,  Color.WHITE): "♕",
@@ -187,7 +187,7 @@ def play_game() -> None:
     sel, moves, turn, active, msg, b_time = None, [], Color.WHITE, True, "", 0
 
     # Depth increases as material decreases
-    flag32 = flag13 = flag6 = flag3 = True
+    flag35 = flag15 = flag7 = flag3 = True
 
     while True:
         # --- Bot's turn ---
@@ -195,15 +195,15 @@ def play_game() -> None:
             st = time.time()
             mats = board.material_on_board()
 
-            if mats <= 32 and flag32:
+            if mats <= 35 and flag35:
                 BOT_DEPTH += 1
-                flag32 = False
-            if mats <= 13 and flag13:
+                flag35 = False
+            if mats <= 15 and flag15:
                 BOT_DEPTH += 1
-                flag13 = False
-            if mats <= 6 and flag6:
-                BOT_DEPTH += 1
-                flag6 = False
+                flag15 = False
+            if mats <= 7 and flag7:
+                BOT_DEPTH += 2
+                flag7 = False
             if mats <= 3 and flag3:
                 BOT_DEPTH += 1
                 flag3 = False
@@ -228,8 +228,8 @@ def play_game() -> None:
                 if btn.collidepoint(ev.pos):
                     board, bot = new_game()
                     sel, moves, turn, active, msg, b_time = None, [], Color.WHITE, True, "", 0
-                    BOT_DEPTH = 5
-                    flag32 = flag13 = flag6 = flag3 = True
+                    BOT_DEPTH = START_DEPTH
+                    flag35 = flag15 = flag7 = flag3 = True
                     continue
 
                 if active and turn == Color.WHITE:

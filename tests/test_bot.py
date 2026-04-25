@@ -70,11 +70,20 @@ def test_bot_captures_free_queen(board):
 def test_bot_avoids_losing_queen(board):
     set_kings(board, white_pos=(0, 0), black_pos=(7, 7))
     board.grid[4][4] = Queen(Color.WHITE)
-    board.grid[3][4] = Pawn(Color.BLACK)
+    board.grid[5][5] = Pawn(Color.BLACK)
 
-    move = Bot(board).best_move(3, Color.WHITE)
+    move = Bot(board).best_move(4, Color.WHITE)
 
-    assert move == ((4, 4), (3, 4), MoveType.NORMAL)
+    assert move == ((4, 4), (5, 5), MoveType.NORMAL)
+
+def test_bot_captures_pawn(board):
+    set_kings(board, white_pos=(0, 0), black_pos=(3, 7))
+    board.grid[4][4] = Queen(Color.WHITE)
+    board.grid[4][3] = Pawn(Color.BLACK)
+
+    move = Bot(board).best_move(6, Color.WHITE)
+
+    assert move == ((4, 4), (4, 3), MoveType.NORMAL)
 
 
 def test_bot_promotes_pawn(board):
