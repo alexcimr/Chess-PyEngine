@@ -6,7 +6,7 @@ from book import uci_to_board_move
 
 # Settings
 PGN_FILE = "lichess_elite_2025-11.pgn"  # https://database.nikonoel.fr/
-MAX_GAMES_TO_READ = 100
+MAX_GAMES_TO_READ = 100000
 # Artificialy low for better piece placement
 OPENING_THRESHOLD = 50
 MIDGAME_THRESHOLD = 12
