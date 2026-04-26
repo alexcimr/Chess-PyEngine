@@ -2,9 +2,9 @@
 
 ![Gameplay](assets/gameplay.gif)
 
-A complete chess engine and playable graphical interface written from scratch in Python. 
-The project features a heavily optimized Minimax search, custom piece-square tables, 
-and an opening book trained on master-level games.
+A complete **chess engine** and playable graphical interface written from scratch in **Python**. 
+The project features a heavily optimized **Minimax search**, custom **piece-square tables**, 
+and an **opening book** trained on master-level games.
 
 ---
 
