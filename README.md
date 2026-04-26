@@ -1,4 +1,4 @@
-# Python Chess Engine
+# Chess PyEngine
 
 ![Gameplay](assets/gameplay.gif)
 
