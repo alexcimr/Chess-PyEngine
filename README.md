@@ -40,15 +40,12 @@ Chess/
 │   ├── pst.json
 │   └── pst.py           # builds PST from PGN
 ├── model/
-│   ├── __init__.py
 │   ├── pieces/          # move generation per piece type
-│   │   └── __init__.py
 │   ├── board.py         # board state, move logic, Zobrist hashing
 │   ├── bot.py           # Minimax engine
 │   ├── enums.py
 │   └── utils.py
 ├── tests/
-│   ├── __init__.py
 │   ├── test_board.py
 │   ├── test_bot.py
 │   └── test_pieces.py
