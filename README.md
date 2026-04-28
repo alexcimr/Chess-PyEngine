@@ -2,29 +2,27 @@
 
 ![Gameplay](assets/gameplay.gif)
 
-A complete **chess engine** and playable graphical interface written from scratch in **Python**. 
-The project features a heavily optimized **Minimax search**, custom **piece-square tables**, 
-and an **opening book** trained on master-level games.
+A custom **chess engine** and playable GUI written from scratch in **Python**.
+It uses optimized **Minimax search**, custom **piece-square tables**, and an **opening book** trained on master-level games.
 
 ---
 
 ## Engine Features
 
-- **Minimax with Alpha-Beta pruning:** The core search algorithm. Captures are ordered before quiet moves, which increases the number of branches pruned and lets the engine search deeper in the same amount of time.
-- **Quiescence Search:** At the search horizon, the engine avoids evaluating immediately. Instead, it continues searching capture sequences until the position is stable. This prevents the "horizon effect" where the engine might otherwise blunder pieces. The **standing pat** condition lets it stop early if the position is already good enough without capturing.
-- **Transposition Tables:** Optimizes the search tree by caching already evaluated positions using **Zobrist hashing**. This eliminates redundant calculations and allows the engine to reach higher depths in less time. To ensure perfect accuracy, it utilizes distinct hash tables based on the side to move.
-- **Piece-square tables:** Built by replaying 100,000 master games from the [Lichess Elite Database](https://database.nikonoel.fr/) and recording how often each piece type sat on each square, split into opening, midgame, and endgame. Starting squares are down-weighted so unmoved pieces don't get an inflated bonus.
-- **Opening Book:** Maps Zobrist hashes to weighted move dictionaries. Weights come from how often each reply appeared in the dataset, so the engine samples from real theory rather than always playing the most common move.
-- **Dynamic Search Depth:** Search depth increases automatically as material leaves the board to calculate deeper into the endgame.
-
+- **Minimax with Alpha-Beta pruning**: The core search algorithm enhanced with move ordering (captures first) to maximize pruning.
+- **Quiescence Search**: Resolves the **horizon effect** and prevents the engine from making blunders at the end of its search depth by searching deeper on capture sequences. Includes a **standing pat** condition.
+- **Transposition Tables**: Caches evaluated positions via **Zobrist hashing** to skip redundant calculations and significantly boost search speed.
+- **Piece-Square Tables**: Generated from 100,000 master games using the [Lichess Elite Database](https://database.nikonoel.fr/). Features separate weights for opening, midgame, and endgame, with down-weighted starting squares to prevent overvaluing unmoved pieces.
+- **Opening Book**: Built from the same PGN dataset, mapped to **Zobrist hashes**. The bot samples moves based on their real-world frequency rather than always playing the absolute most common move.
+- **Dynamic Search Depth**: Automatically increases search depth as material leaves the board, allowing for deeper endgame calculations.
 ---
 
 ## Stack
 
 - **Python 3**
 - **Pygame** (Graphical Interface)
-- `python-chess` (for PGN parsing in dataset scripts only)
-- `pytest` (for unit testing)
+- **python-chess** (PGN Parsing)
+- **pytest** (Unit Testing)
 
 ---
 
@@ -69,8 +67,8 @@ You play as White. Click a piece to select it, then click a destination square. 
 python -m pytest tests/ -v
 ```
 
-## Retraining the datasets (Optional)
-To retrain on a different PGN file:
+## Retraining the datasets
+To retrain using a different dataset, download a PGN file and update the `PGN_FILE` path in the scripts:
 
 ```bash
 python data/book.py
@@ -80,6 +78,5 @@ python data/pst.py
 ---
 
 ## Future Roadmap
-
-* **Neural Network Evaluation:** Implementing a shallow neural network to replace or augment the current heuristic-based PST evaluation for more accurate positional scoring.
-* **Enhanced GUI:** Upgrading the Pygame interface to include game mode selection, adjustable difficulty levels, and a move history log.
+- **Neural Network Eval**: Replace the static PST with a shallow neural network for more precise positional scoring.
+- **GUI Improvements**: Add a move history log, color selection, and timer.
