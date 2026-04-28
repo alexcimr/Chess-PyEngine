@@ -12,9 +12,10 @@ It uses optimized **Minimax search**, custom **piece-square tables**, and an **o
 - **Minimax with Alpha-Beta pruning**: The core search algorithm enhanced with move ordering (captures first) to maximize pruning.
 - **Quiescence Search**: Resolves the **horizon effect** and prevents the engine from making blunders at the end of its search depth by searching deeper on capture sequences. Includes a **standing pat** condition.
 - **Transposition Tables**: Caches evaluated positions via **Zobrist hashing** to skip redundant calculations and significantly boost search speed.
-- **Piece-Square Tables**: Generated from 100,000 master games using the [Lichess Elite Database](https://database.nikonoel.fr/). Features separate weights for opening, midgame, and endgame, with down-weighted starting squares to prevent overvaluing unmoved pieces.
-- **Opening Book**: Built from the same PGN dataset, mapped to **Zobrist hashes**. The bot samples moves based on their real-world frequency rather than always playing the absolute most common move.
+- **Piece-Square Tables**: Evaluates piece placement by assigning specific values to every square on the board. The tables were generated from 100,000 master games using the [Lichess Elite Database](https://database.nikonoel.fr/). Features separate weights for opening, midgame, and endgame, with down-weighted starting squares.
+- **Opening Book**: A lookup table built from the same PGN dataset, mapping board positions to moves via **Zobrist hashing**. Selection is weighted by move frequency to keep play varied and theoretical.
 - **Dynamic Search Depth**: Automatically increases search depth as material leaves the board, allowing for deeper endgame calculations.
+
 ---
 
 ## Stack
