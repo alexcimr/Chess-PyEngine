@@ -100,17 +100,8 @@ class Bot():
 
     def minimax(self, depth: int, pos_eval: float, maximazing_color: Color, alfa: float, beta: float) -> float:
         """
-        Minimax search with alpha-beta pruning, Zobrist transposition tables and Quiescence search.
-
-        Args:
-            depth:            Remaining half-moves to search.
-            pos_eval:         Incrementally maintained evaluation of current position.
-            maximazing_color: The side to move.
-            alfa:             Best score White can guarantee (lower bound).
-            beta:             Best score Black can guarantee (upper bound).
-
-        Returns:
-            The evaluated score for the current position.
+        Minimax with alpha-beta pruning, transposition table and quiescence search.
+        Positive score = good for White, negative = good for Black. Depth is in half-moves
         """
         if depth == -5: # hard limit
             return pos_eval
