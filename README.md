@@ -41,14 +41,14 @@ Chess/
 ├── model/
 │   ├── pieces/          # move generation per piece type
 │   ├── board.py         # board state, move logic, Zobrist hashing
-│   ├── bot.py           # Minimax engine
+│   ├── bot.py           # minimax engine
 │   ├── enums.py
 │   └── utils.py
 ├── tests/
 │   ├── test_board.py
 │   ├── test_bot.py
 │   └── test_pieces.py
-├── game.py              # Game GUI logic
+├── game.py              # game GUI logic
 ├── main.py
 └── README.md
 ```
